@@ -1,3 +1,63 @@
+# Maintenance Walkthrough - 2026-06-24 (Sessão 2 — Testes E2E)
+
+## Testes End-to-End do Ecossistema Realizzati Móveis
+
+Realizou-se a validação completa do pipeline de captura de leads e tageamento GTM nesta sessão, com todos os testes passando com sucesso.
+
+### Ambiente de Teste
+- **Frontend**: `core/real-lead-capture` rodando em `http://localhost:8080/` (Vite dev server)
+- **Backend Watcher**: `skills/NotFair/bin/listen_leads.py watch` em polling REST a cada 5s
+- **Script E2E**: `skills/NotFair/bin/test_flow_e2e.py` (criado nesta sessão)
+
+### Resultados dos Testes
+
+- **Firebase REST API (réplica do LeadForm.tsx)**: Lead gravado com sucesso via POST para `https://firestore.googleapis.com/v1/...` com chave pública. Status HTTP 200, Document ID gerado corretamente.
+- **Firebase Admin SDK (leitura)**: Documento localizado no Firestore imediatamente após a gravação, com todos os campos validados (`name`, `email`, `phone`, `tenant`, `createdAt`). Total de 6 leads no banco ao final dos testes.
+- **Teste manual pelo browser**: Formulário preenchido com dados reais (`Seafeet Starken`, `seafeet.starken@gmail.com`, `47992752697`). Lead salvo com Document ID `3g613R1xNoCnjz1uB2Ou`.
+
+### Validação GTM — `window.dataLayer` Confirmado no Browser
+
+Eventos capturados no DevTools Console após submissão do formulário:
+```json
+[
+  { "event": "gtm.js",           "gtm.uniqueEventId": 3 },
+  { "event": "virtual_pageview", "page_path": "/",
+    "page_title": "Realizzati Móveis - Móveis Planejados de Alto Padrão Sob Medida",
+    "gtm.uniqueEventId": 4 },
+  { "event": "gtm.dom",          "gtm.uniqueEventId": 5 },
+  { "event": "gtm.load",         "gtm.uniqueEventId": 6 },
+  { "event": "lead_submit_success",
+    "user_data": {
+      "email": "seafeet.starken@gmail.com",
+      "phone": "47992752697",
+      "name":  "Seafeet Starken"
+    }, "gtm.uniqueEventId": 7 },
+  { "event": "virtual_pageview", "page_path": "/obrigado",
+    "page_title": "Realizzati Móveis - Móveis Planejados de Alto Padrão Sob Medida",
+    "gtm.uniqueEventId": 8 }
+]
+```
+
+### Correções Aplicadas nesta Sessão
+
+- **`listen_leads.py` — UnicodeEncodeError (Windows cp1252)**: O emoji `🔔` no `print()` causava crash no terminal do Windows com encoding `cp1252`. Corrigido forçando `sys.stdout` para UTF-8 (`io.TextIOWrapper`) e substituindo o emoji por texto ASCII.
+- **`listen_leads.py watch` — FAILED_PRECONDITION (gRPC Regional Access Boundary)**: O método `on_snapshot()` do Firebase Admin SDK usa gRPC bidirecional streaming, que falha com `Precondition check failed` em ambientes com restrições de Regional Access Boundary no GCP. **Solução**: substituído por polling REST a cada 5 segundos usando a API REST pública do Firestore com a chave de API, mantendo a funcionalidade sem gRPC.
+- **`test_flow_e2e.py` criado**: Script de teste automatizado end-to-end que valida REST API, Admin SDK e gera relatório de eventos GTM esperados. Salvo em `skills/NotFair/bin/test_flow_e2e.py`.
+
+### Arquivos Modificados e Criados
+
+- `skills/NotFair/bin/listen_leads.py` — corrigido encoding e substituído watch por polling REST
+- `skills/NotFair/bin/test_flow_e2e.py` — **NOVO** script de testes E2E automatizados
+
+### Commit
+
+```
+fix: corrige listen_leads.py (UnicodeEncodeError + polling REST p/ watch) e adiciona test_flow_e2e.py
+```
+Branch `main`, repositório `skills/NotFair`.
+
+---
+
 # Maintenance Walkthrough - 2026-06-24
 
 - **Implementou-se o Tageamento Avançado no Frontend (`real-lead-capture`)**:
