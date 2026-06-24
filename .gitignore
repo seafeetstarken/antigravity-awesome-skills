@@ -52,3 +52,14 @@ skills/spline-3d-integration/*.zip
 
 # Temporary plugin staging directories
 plugins/.antigravity-awesome-skills.staging-*/
+
+# Local development and IDEs
+.env
+.env.local
+.env.*.local
+*.log
+.vscode/
+.idea/
+.cache/
+.turbo/
+build/

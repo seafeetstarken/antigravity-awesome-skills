@@ -1,3 +1,20 @@
+# Maintenance Walkthrough - 2026-06-24
+
+- **Implementou-se o Tageamento Avançado no Frontend (`real-lead-capture`)**:
+  - Caminhos: `src/lib/gtm.ts` (helper tipado), `src/App.tsx` (RouteTracker para SPAs), `src/pages/ThankYou.tsx` e `src/components/LeadForm.tsx` (captura de Enhanced Conversions no dataLayer).
+  - Sucesso: Captação de leads por REST API diretamente no Firestore utilizando a chave pública, eliminando dependências pesadas do SDK e mantendo o frontend ultraleve.
+
+- **Desenvolveu-se a Automação e Deployment Programático do GTM via API Google Tag Manager V2**:
+  - Caminhos: `skills/NotFair/bin/gtm_deployer.py` (deployer GTM), `skills/NotFair/bin/generate_gtm_json.py` (gerador de templates JSON), e `skills/NotFair/bin/nf.py` (CLI NotFair).
+  - Sucesso: O script do deployer lê o template JSON, reconectando e mapeando dinamicamente os novos IDs de acionadores (triggers) criados no workspace antes de configurar as tags, criando e publicando a versão de forma 100% automatizada.
+  - Integração CLI: Comando `gtm-deploy` adicionado no CLI principal do NotFair para carregar as chaves de forma multi-tenant diretamente do Firestore ou arquivo local do tenant.
+
+- **Erros e Ajustes Resolvidos (Acertos de Implementação)**:
+  - **Mapeamento de Parâmetros de Trigger (400 Bad Request)**: Corrigido o gerador de JSON para utilizar as chaves de parâmetro `arg0` e `arg1` (exigência da API do GTM) em vez de `arg1` e `arg2` nas condições de filtros de eventos personalizados.
+  - **Disparador do Google Tag (googtag)**: O disparador de inicialização do sistema `2147479590` não era reconhecido como acionador válido de tags na API, resultando em erro `enablingTriggerId[0]`. Corrigido para utilizar a trigger nativa de All Pages `2147479553` que é totalmente compatível.
+  - **Limites de Quota de API (429 Rate Limits)**: Chamadas consecutivas dispararam limites de requisições por minuto por usuário do Tag Manager. Mitigado usando tempos de espera/esperas controladas durante testes.
+  - **Slug do Tenant**: Erros de digitação nos comandos (ex: `realizatti_moveis` ou `realizizzati_moveis`) impediam o carregamento de variáveis do Firestore. Validadas as chaves locais e na nuvem sob o slug oficial `realizzati_moveis`.
+
 # Maintenance Walkthrough - 2026-04-17
 
 - Imported 8 frontend/design skills from [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) into `skills/`:
